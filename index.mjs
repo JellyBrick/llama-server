@@ -41,20 +41,24 @@ const main = async () => {
   app.use(bodyParser());
   
   const router = new Router();
+
+  app.use(router.routes());
+  app.use(router.allowedMethods());
   
-  router.post('/inference', async (ctx, next) => {
+  router.post('/', async (ctx, next) => {
     const body = ctx.request.body;
+    console.log(body);
     if (body.authKey == process.env.GLOBAL_AUTH_KEY) {
       ctx.status = 200;
       const userPrompt = body.prompt;
       let semyResponse = '';
 
       const finalPrompt
-        = promptTemplate.replace(/\%NOW_DATE_TIME\%/g, (new Date()).toString()) + '\n' + userPrompt + '\nSEMY:';
+        = promptTemplate.replace(/\%NOW_DATE_TIME\%/g, (new Date()).toString()) + '\n' + userPrompt + '\nSydney:';
 
       await llama.createCompletion({
         ...generationConfig,
-        finalPrompt,
+        prompt: finalPrompt,
       }, (response) => {
         semyResponse += response.token;
       });
@@ -63,10 +67,12 @@ const main = async () => {
         response: semyResponse,
       };
     } else {
-      ctx.status = 404;
+      ctx.status = 403;
     }
     await next();
   });
+
+  app.listen(8884);
 };
 
 main();
